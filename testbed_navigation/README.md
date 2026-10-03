@@ -118,10 +118,18 @@ The bugs found in the starter code are listed in [`../bugs_and_fixes.txt`](../bu
 
 ## Results
 
-<!-- Add your screenshots / video here, e.g. media/localization.png -->
+**Simulation world (Gazebo Harmonic)**
 
-| Localization (particle cloud converging) | Navigation (goal reached) |
+![Gazebo world](media/gazebo_world.png)
+
+**Localization:** the robot is localized on `testbed_world.pgm`. The laser scan (red) lines up with the map walls.
+
+![Localization](media/localization.png)
+
+**Navigation:** a goal sent with *2D Goal Pose*. The global plan (`/plan`, green) goes around the walls, and the robot follows it.
+
+| Plan computed | Robot following the plan |
 |---|---|
-| ![localization](media/localization.png) | ![navigation](media/navigation.png) |
+| ![Navigation plan](media/navigation_plan.png) | ![Navigation progress](media/navigation_progress.png) |
 
-Video: _link_
+**Demo video:** [media/demo.webm](media/demo.webm)
