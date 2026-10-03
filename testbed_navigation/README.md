@@ -104,15 +104,14 @@ controller_server / behavior_server ──cmd_vel_nav──▶ velocity_smoother
 
 ---
 
-## Challenges and how they were solved
+## Challenges and bugs
 
-1. **Starter code targeted Gazebo Classic, but ROS 2 Jazzy ships with Gazebo Harmonic.** I ported the robot and worlds to `ros_gz`: the DiffDrive, JointStatePublisher and IMU systems, a `gpu_lidar` sensor, `ros_gz_sim create` for spawning, and a `ros_gz_bridge` for `/clock`, `/cmd_vel`, `/odom`, `/tf`, `/imu`, `/scan` and `/joint_states`. I also added the required system plugins (Physics, Sensors, SceneBroadcaster, UserCommands, Imu) to the worlds.
-2. **Mismatch between the lidar TF frame and the URDF link names.** Gazebo Harmonic stamps sensor data with a scoped frame (`testbed/base_footprint/head_hokuyo_sensor`) that `robot_state_publisher` does not know, so RViz and AMCL dropped every scan. A zero-offset `static_transform_publisher` now maps this frame to `lidar_link_1` (and does the same for the IMU).
-3. **Map not showing in RViz.** The map is published once with *transient local* durability, so the RViz Map display has to subscribe with *Transient Local* durability and use Fixed Frame `map`.
-4. **Lidar range too short for localization.** With the original 1.5 m range, the robot often saw nothing in open areas (all readings `inf`), and AMCL fell back on odometry alone. I raised the sensor range to 10 m and set `laser_max_range` to match.
-5. **Simulated time.** `robot_state_publisher` was not using `use_sim_time`, so its TF timestamps did not match the Gazebo clock. All nodes now run with `use_sim_time: true`.
+1. **Porting the simulation to Gazebo Harmonic.** I haven't used ROS 1, so I ported the simulation to Gazebo Harmonic, which added extra work. The robot and worlds now use `ros_gz`: the DiffDrive, JointStatePublisher and IMU systems, a `gpu_lidar` sensor, `ros_gz_sim create` for spawning, and a `ros_gz_bridge` for the sensor, odometry and command topics.
+2. **Syntax error in `CMakeLists.txt`.** In `testbed_description/CMakeLists.txt`, the parentheses were missing after `ament_package`. Changing it to `ament_package()` fixed the build.
+3. **Small mismatch between the world and `testbed_world.pgm`.** A small open space in the Gazebo world is not present in the `.pgm` map.
+4. **Lidar range too short for the world.** The lidar range was 1.5 m. Because the robot spawns next to a lot of open space, it often saw nothing nearby, so localization and navigation were poor. I increased the scan range from 1.5 m to 10 m.
 
-The bugs found in the starter code are listed in [`../bugs_and_fixes.txt`](../bugs_and_fixes.txt).
+The full list of bugs found in the starter code is in [`../bugs_and_fixes.txt`](../bugs_and_fixes.txt). in the starter code are listed in [`../bugs_and_fixes.txt`](../bugs_and_fixes.txt).
 
 ---
 
