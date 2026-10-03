@@ -1,0 +1,66 @@
+Level 1 ROS2 Navigation Assignment - Bugs identified and fixes
+==============================================================
+
+Platform: ROS 2 Jazzy, Gazebo Harmonic (ros_gz), Ubuntu 24.04
+
+
+A. Bugs in the starter code
+---------------------------
+
+1. testbed_bringup/maps/testbed_world.yaml - wrong image path
+   Bug:  image: wrong_path_testbed_world.pgm  (this file does not exist, so map_server fails to load the map)
+   Fix:  image: testbed_world.pgm
+
+2. testbed_bringup/CMakeLists.txt - maps folder not installed
+   Bug:  install(DIRECTORY ...) listed only "launch", so maps/ was missing from the
+         share directory and get_package_share_directory('testbed_bringup')/maps/... did not exist.
+   Fix:  added "maps" to the install(DIRECTORY ...) list.
+
+3. testbed_description/CMakeLists.txt - CMake parse error
+   Bug:  ament_package   (no parentheses) -> "Parse error, `ament_package` missing parentheses"
+   Fix:  ament_package()
+
+4. testbed_description/urdf/testbed.gazebo - malformed IMU plugin XML
+   Bug:  <initial_orientation_as_reference>false</initial_orientation_as_reference>>  (stray '>')
+   Fix:  removed. The old Classic IMU plugin block was replaced by the Gazebo Harmonic
+         IMU sensor configuration (see B.1).
+
+5. testbed_description/launch/robot_description.launch.py - simulation time not used
+   Bug:  robot_state_publisher ran on wall-clock time while Gazebo publishes /clock,
+         so its TF timestamps did not match the rest of the system (TF extrapolation errors in RViz/AMCL).
+   Fix:  added {'use_sim_time': True} to its parameters.
+
+
+B. Environment / compatibility issues (ROS 2 Jazzy + Gazebo Harmonic)
+----------------------------------------------------------------------
+
+1. Gazebo Classic plugins are not available on Jazzy
+   Problem: launch files and URDF used gazebo_ros (spawn_entity.py, libgazebo_ros_diff_drive.so,
+            libgazebo_ros_ray_sensor.so, libgazebo_ros_imu_sensor.so, libgazebo_ros_control.so).
+            Error: "Package 'gazebo_ros' not found".
+   Fix:  ported the robot to Gazebo Harmonic:
+         - testbed.gazebo: gz-sim-diff-drive-system (odom + odom->base_footprint TF),
+           gz-sim-joint-state-publisher-system, imu sensor, gpu_lidar sensor publishing on "scan".
+         - spawn_playground.launch.py: ros_gz_sim gz_sim.launch.py instead of gazebo_ros.
+         - spawn_testbed.launch.py: ros_gz_sim "create" for spawning, plus a ros_gz_bridge
+           for /clock, /cmd_vel, /odom, /tf, /imu, /scan, /joint_states.
+         - worlds: added the Physics, Sensors (ogre2), SceneBroadcaster, UserCommands and Imu system plugins.
+         - testbed_gazebo/package.xml: added ros_gz_sim and ros_gz_bridge dependencies.
+
+2. Lidar / IMU TF frame mismatch
+   Problem: Gazebo Harmonic stamps sensor data with scoped frames
+            (testbed/base_footprint/head_hokuyo_sensor, testbed/base_footprint/imu_link_1)
+            that robot_state_publisher does not publish -> RViz "Message Filter dropping message",
+            and AMCL could not use the scans.
+   Fix:  zero-offset static_transform_publisher nodes in spawn_testbed.launch.py that map these frames
+         to the URDF links lidar_link_1 and imu_link_1.
+
+3. Lidar range too short for localization
+   Problem: the lidar max range was 1.5 m; in open areas every reading was inf, so AMCL had
+            nothing to match against the map.
+   Fix:  increased the sensor range to 10 m (testbed.gazebo) and set AMCL laser_max_range to match.
+
+4. rviz2 / gz sim gui crash when started from the VS Code terminal
+   Problem: "symbol lookup error: /snap/core20/.../libpthread.so.0: undefined symbol __libc_pthread_init"
+            caused by snap environment variables in the VS Code (snap) terminal.
+   Fix:  launched the simulation from a regular system terminal.

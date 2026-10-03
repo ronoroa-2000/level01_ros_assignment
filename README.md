@@ -1,4 +1,4 @@
-# Level 1: ROS2 Navigation Assignment - Your Full Name
+# Level 1: ROS2 Navigation Assignment - Vighnesh Madhav Deshmukh
 
 ## Overview
 At ERIC Robotics, we’re big believers in building software with modularity. The nav2 stack reflects this perfectly with flexible, plugin-based framework, allowing you to pick and choose which pieces you need and run them independently. In this assignment, you’ll walk through the navigation workflow step by step—manually creating and calling actions—to bring an autonomous robot to life.
